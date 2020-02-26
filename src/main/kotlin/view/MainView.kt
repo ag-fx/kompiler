@@ -2,13 +2,14 @@ package view
 
 import app.MainViewController
 import app.Styles
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import javafx.application.Platform
 import javafx.beans.property.SimpleStringProperty
+import javafx.geometry.Pos
 import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.scene.control.TextArea
+import javafx.scene.image.Image
+import javafx.scene.image.ImageView
 import javafx.scene.input.KeyCombination
 import javafx.stage.FileChooser
 import javafx.stage.Window
@@ -30,6 +31,8 @@ class MainView : View(), KoinComponent {
 
     override val root = vbox {
         setPrefSize(800.0, 600.0)
+        alignment = Pos.CENTER
+
         menubar {
             menu(name = "File") {
                 item(name = "Create new", keyCombination = "Ctrl+N") {
@@ -177,121 +180,68 @@ class MainView : View(), KoinComponent {
             }
         }
         hbox {
-            button {
+            spacing = 2.0
+
+            button("", ImageView(Image("app/new.png"))) {
                 tooltip("New file")
                 action {
                     createFile()
                     textArea.requestFocus()
                 }
-                addClass(Styles.newFile)
-                graphic = FontAwesomeIconView(FontAwesomeIcon.FILE).apply {
-                    style {
-                        fill = c("#818181")
-                    }
-                    glyphSize = 18
-                }
             }
-            button {
+            button("", ImageView(Image("app/open.png"))) {
                 tooltip("Open file")
                 action {
                     openFile()
                     textArea.requestFocus()
                 }
-                addClass(Styles.openFile)
-                graphic = FontAwesomeIconView(FontAwesomeIcon.FOLDER).apply {
-                    style {
-                        fill = c("#818181")
-                    }
-                    glyphSize = 18
-                }
             }
-            button {
+            button("", ImageView(Image("app/save.png"))) {
                 tooltip("Save file")
                 action {
                     saveChanges()
                     textArea.requestFocus()
                 }
-                addClass(Styles.saveFile)
-                graphic = FontAwesomeIconView(FontAwesomeIcon.SAVE).apply {
-                    style {
-                        fill = c("#818181")
-                    }
-                    glyphSize = 18
-                }
             }
-            button {
+            button("", ImageView(Image("app/undo.png"))) {
                 tooltip("Undo")
                 action {
                     textArea.undo()
                     textArea.requestFocus()
                 }
-                addClass(Styles.undo)
-                graphic = FontAwesomeIconView(FontAwesomeIcon.UNDO).apply {
-                    style {
-                        fill = c("#818181")
-                    }
-                    glyphSize = 18
-                }
             }
-            button {
+            button("", ImageView(Image("app/redo.png"))) {
                 tooltip("Redo")
                 action {
                     textArea.redo()
                     textArea.requestFocus()
                 }
-                addClass(Styles.redo)
-                graphic = FontAwesomeIconView(FontAwesomeIcon.REPEAT).apply {
-                    style {
-                        fill = c("#818181")
-                    }
-                    glyphSize = 18
-                }
             }
-            button {
+            button("", ImageView(Image("app/copy.png"))) {
                 tooltip("Copy")
                 action {
                     textArea.copy()
                     textArea.requestFocus()
                 }
-                addClass(Styles.copy)
-                graphic = FontAwesomeIconView(FontAwesomeIcon.COPY).apply {
-                    style {
-                        fill = c("#818181")
-                    }
-                    glyphSize = 18
-                }
             }
-            button {
+            button("", ImageView(Image("app/cut.png"))) {
                 tooltip("Cut")
                 action {
                     textArea.cut()
                     textArea.requestFocus()
                 }
-                addClass(Styles.cut)
-                graphic = FontAwesomeIconView(FontAwesomeIcon.CUT).apply {
-                    style {
-                        fill = c("#818181")
-                    }
-                    glyphSize = 18
-                }
             }
-            button {
+            button("", ImageView(Image("app/paste.png"))) {
                 tooltip("Paste")
                 action {
                     textArea.paste()
                     textArea.requestFocus()
                 }
-                addClass(Styles.paste)
-                graphic = FontAwesomeIconView(FontAwesomeIcon.PASTE).apply {
-                    style {
-                        fill = c("#818181")
-                    }
-                    glyphSize = 18
-                }
             }
         }
         textarea {
             textArea = this
+            requestFocus()
             addClass(Styles.enterText)
         }
     }
