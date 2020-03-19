@@ -181,7 +181,7 @@ class MainView : View(), KoinComponent {
             menu(name = "Help") {
                 item(name = "Help") {
                     action {
-                        alert(Alert.AlertType.INFORMATION, "Help")
+                        find<HelpView>().openModal()
                     }
                 }
                 item(name = "About") {
