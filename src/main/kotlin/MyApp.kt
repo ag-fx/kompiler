@@ -1,9 +1,10 @@
-package app
 
+import app.Styles
 import di.appModule
 import javafx.stage.Stage
 import org.koin.core.context.startKoin
-import tornadofx.*
+import tornadofx.App
+import tornadofx.alert
 import view.MainView
 
 class MyApp : App(MainView::class, Styles::class) {
