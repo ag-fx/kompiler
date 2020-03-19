@@ -1,6 +1,9 @@
 
 import app.Styles
 import di.appModule
+import javafx.event.EventHandler
+import javafx.scene.control.Alert
+import javafx.scene.control.ButtonType
 import javafx.stage.Stage
 import org.koin.core.context.startKoin
 import tornadofx.App
@@ -12,6 +15,25 @@ class MyApp : App(MainView::class, Styles::class) {
         startKoin {
             modules(appModule)
         }
+
+        stage.onCloseRequest = EventHandler { event ->
+            alert(
+                    Alert.AlertType.CONFIRMATION,
+                    "You may have unsaved changes",
+                    "Confirm closing",
+                    ButtonType.YES, ButtonType.CANCEL,
+                    owner = stage.owner
+            ) {
+                when (result) {
+                    ButtonType.YES -> {
+                    }
+                    ButtonType.CANCEL -> {
+                        event.consume()
+                    }
+                }
+            }
+        }
+
         super.start(stage)
     }
 }

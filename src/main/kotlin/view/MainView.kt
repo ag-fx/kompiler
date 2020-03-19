@@ -11,16 +11,21 @@ import javafx.scene.control.TextArea
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.KeyCombination
-import javafx.stage.FileChooser
 import javafx.stage.Window
 import org.koin.core.KoinComponent
+import service.FileService
 import tornadofx.*
 import utils.ext.deleteSelectedText
-import java.io.File
+import java.awt.Desktop
+import java.net.URI
 
-
+/* TODO
+*   Research about Undo / Redo
+*   Error: can't find main class file MyApp
+*/
 class MainView : View(), KoinComponent {
     private val mainViewController: MainViewController by getKoin().inject()
+
     private var textArea by singleAssign<TextArea>()
     private val viewTitle = SimpleStringProperty("Kompiler")
 
@@ -30,7 +35,7 @@ class MainView : View(), KoinComponent {
     }
 
     override val root = vbox {
-        setPrefSize(800.0, 600.0)
+        setPrefSize(800.0, 700.0)
         alignment = Pos.CENTER
 
         menubar {
@@ -55,9 +60,9 @@ class MainView : View(), KoinComponent {
                 }
                 item(name = "Save file as", keyCombination = "Ctrl+Shift+S") {
                     shortcut(KeyCombination.keyCombination("Ctrl+S")) {
-                        saveAsFile()
+                        saveFileAs()
                     }
-                    action { saveAsFile() }
+                    action { saveFileAs() }
                 }
                 item(name = "Exit") {
                     action {
@@ -153,7 +158,14 @@ class MainView : View(), KoinComponent {
                 item(name = "Code sources") {
                     tooltip(text = "Code sources")
                     action {
-                        alert(Alert.AlertType.INFORMATION, "Code sources")
+                        alert(
+                                Alert.AlertType.INFORMATION,
+                                "Code sources",
+                                "Github: Kotlin + Compiler = Kompiler",
+                                ButtonType("Open in browser")
+                        ) {
+                            Desktop.getDesktop().browse(URI("https://github.com/Mfungorn/kompiler"))
+                        }
                     }
                 }
             }
@@ -174,7 +186,10 @@ class MainView : View(), KoinComponent {
                 }
                 item(name = "About") {
                     action {
-                        alert(Alert.AlertType.INFORMATION, "About")
+                        alert(Alert.AlertType.INFORMATION, "About", """
+                            At this stage this program is a simple version of text editor
+                            in which you can do basic operations such as text input, editing, saving etc.
+                        """.trimIndent())
                     }
                 }
             }
@@ -244,52 +259,73 @@ class MainView : View(), KoinComponent {
             requestFocus()
             addClass(Styles.enterText)
         }
+        textarea {
+            isEditable = false
+            addClass(Styles.outputText)
+        }
     }
 
     override fun onDock() {
         super.onDock()
 
+        mainViewController.fileServiceEventsObservable
+                .subscribe {
+                    when (it) {
+                        is FileService.FileServiceEvent.FileChanged -> viewTitle.set("Kompiler " + it.file?.absolutePath)
+                    }
+                }
+
+        mainViewController.errorObservable
+                .subscribe {
+                    showErrorAlert(
+                            it.localizedMessage,
+                            currentWindow
+                    )
+                }
         currentStage?.isResizable = false
     }
 
     private fun createFile() {
-        TextInputDialog("Create") {
-            if (it.isNotEmpty()) {
-                val file = File(it).apply { createNewFile() }
-                mainViewController.currentFile = file
-                textArea.text = file.readText()
-                viewTitle.set("Kompiler " + file.absolutePath)
-            }
-        }.openModal()
+        if (textArea.text.isNotEmpty()) {
+            showConfirmationDialog(
+                    "You have unsaved changes",
+                    "Confirm operation",
+                    onConfirm = {
+                        TextInputDialog("Create") {
+                            mainViewController.createFile(it, currentWindow)
+                        }.openModal()
+                    },
+                    onDecline = {}
+            )
+        } else {
+            TextInputDialog("Create") {
+                mainViewController.createFile(it, currentWindow)
+            }.openModal()
+        }
     }
 
     private fun openFile() {
-        textArea.text = try {
-            FileChooser().run {
-                initialDirectory = File(".")
-                showOpenDialog(currentWindow)
-            }.also {
-                mainViewController.currentFile = it
-                viewTitle.set("Kompiler " + it.absolutePath)
-            }?.readText()
-        } catch (t: Throwable) {
-            textArea.text
+        if (textArea.text.isNotEmpty()) {
+            showConfirmationDialog(
+                    "You have unsaved changes",
+                    "Confirm operation",
+                    onConfirm = {
+                        textArea.text = mainViewController.openFile(currentWindow) ?: textArea.text
+                    },
+                    onDecline = {}
+            )
+        } else {
+            textArea.text = mainViewController.openFile(currentWindow) ?: textArea.text
         }
     }
 
     private fun saveChanges() {
-        val file = mainViewController.currentFile
-        if (file != null) {
-            file.writeText(textArea.text)
-        } else
-            showErrorAlert("No current file", currentWindow)
+        mainViewController.saveFile(textArea.text, currentWindow) { saveFileAs() }
     }
 
-    private fun saveAsFile() {
-        TextInputDialog("Save as") {
-            val file = File(it)
-            file.writeText(textArea.text)
-            viewTitle.set("Kompiler " + file.absolutePath)
+    private fun saveFileAs() {
+        TextInputDialog("Save As") {
+            mainViewController.saveFileAs(it, textArea.text, currentWindow)
         }.openModal()
     }
 
@@ -299,4 +335,23 @@ class MainView : View(), KoinComponent {
             content = message,
             owner = dialogOwner
     )
+
+    private fun showConfirmationDialog(header: String, content: String, onConfirm: () -> Unit, onDecline: () -> Unit) = alert(
+            Alert.AlertType.CONFIRMATION,
+            header,
+            content,
+            ButtonType.YES, ButtonType.CANCEL,
+            owner = currentWindow
+    ) {
+        when (result) {
+            ButtonType.YES -> {
+                onConfirm()
+                hide()
+            }
+            ButtonType.CANCEL -> {
+                onDecline()
+                hide()
+            }
+        }
+    }
 }
